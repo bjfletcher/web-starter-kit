@@ -42,7 +42,7 @@ var AUTOPREFIXER_BROWSERS = [
 
 // Lint JavaScript
 gulp.task('jshint', function () {
-  return gulp.src('app/scripts/**/*.js')
+  return gulp.src(['app/scripts/**/*.js', '!app/scripts/bundle.js'])
     .pipe(reload({stream: true, once: true}))
     .pipe($.jshint())
     .pipe($.jshint.reporter('jshint-stylish'))
@@ -154,7 +154,7 @@ gulp.task('serve', ['styles'], function () {
 
   gulp.watch(['app/**/*.html'], reload);
   gulp.watch(['app/styles/**/*.{scss,css}'], ['styles', reload]);
-  gulp.watch(['app/scripts/**/*.js'], ['jshint']);
+  gulp.watch(['app/scripts/**/*.js'], ['browserify', reload]);
   gulp.watch(['app/images/**/*'], reload);
 });
 
@@ -187,5 +187,66 @@ gulp.task('pagespeed', pagespeed.bind(null, {
   strategy: 'mobile'
 }));
 
+/* The below to "// End" is from:
+   https://github.com/greypants/gulp-starter/blob/master/gulp/tasks/browserify.js
+*/
+/* browserify task
+   ---------------
+   Bundle javascripty things with browserify!
+   This task is set up to generate multiple separate bundles, from
+   different sources, and to use Watchify when run from the default task.
+   See browserify.bundleConfigs in gulp/config.js
+*/
+
+var browserify   = require('browserify');
+var watchify     = require('watchify');
+var source       = require('vinyl-source-stream');
+
+// TODO: check if worth running jshint in parallel?
+// TODO: check if we need browserify elsewhere in the task run definitions
+gulp.task('browserify', ['jshint'], function() {
+
+  var bundler = browserify({
+    // Required watchify args
+    cache: {}, packageCache: {}, fullPaths: true,
+    // Specify the entry point of your app
+    entries: './app/scripts/main.js',
+    // Add file extentions to make optional in your requires
+    extensions: [],
+    // Enable source maps!
+    debug: true
+  });
+
+  var bundle = function() {
+    return bundler
+      .bundle()
+      .on('error', function(e) {
+        console.log('Browserify error:', e);
+        this.emit('end');
+      })
+      // Use vinyl-source-stream to make the
+      // stream gulp compatible. Specifiy the
+      // desired output filename here.
+      .pipe(source('bundle.js'))
+      // Specify the output destination
+      .pipe(gulp.dest('./app/scripts/'))
+      .on('end', function() {}); // TODO: check that this is needed
+  };
+
+  if(global.isWatching) {
+    // Wrap with watchify and rebundle on changes
+    bundler = watchify(bundler);
+    // Rebundle on update
+    bundler.on('update', bundle);
+  }
+  
+  return bundle();
+
+});
+
+// End
+
 // Load custom tasks from the `tasks` directory
 // try { require('require-dir')('tasks'); } catch (err) { console.error(err); }
+
+
