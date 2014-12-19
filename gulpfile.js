@@ -42,8 +42,8 @@ var AUTOPREFIXER_BROWSERS = [
 
 // Lint JavaScript
 gulp.task('jshint', function () {
-  return gulp.src(['app/scripts/**/*.js', '!app/scripts/bundle.js'])
-    .pipe(reload({stream: true, once: true}))
+  return gulp.src(['app/scripts/**/*.js', 'app/scripts/**/*.js', '!app/scripts/bundle.js'])
+//    .pipe(reload({stream: true, once: true}))
     .pipe($.jshint())
     .pipe($.jshint.reporter('jshint-stylish'))
     .pipe($.if(!browserSync.active, $.jshint.reporter('fail')));
@@ -140,7 +140,7 @@ gulp.task('html', function () {
 gulp.task('clean', del.bind(null, ['.tmp', 'dist/*', '!dist/.git'], {dot: true}));
 
 // Watch Files For Changes & Reload
-gulp.task('serve', ['styles'], function () {
+gulp.task('serve', ['styles', 'browserify'], function () {
   browserSync({
     notify: false,
     // Customize the BrowserSync console logging prefix
@@ -154,7 +154,7 @@ gulp.task('serve', ['styles'], function () {
 
   gulp.watch(['app/**/*.html'], reload);
   gulp.watch(['app/styles/**/*.{scss,css}'], ['styles', reload]);
-  gulp.watch(['app/scripts/**/*.js'], ['browserify', reload]);
+  gulp.watch(['app/scripts/**/*.js', 'app/scripts/**/*.jsx', '!app/scripts/bundle.js'], ['jshint', 'browserify', reload]);
   gulp.watch(['app/images/**/*'], reload);
 });
 
@@ -187,7 +187,7 @@ gulp.task('pagespeed', pagespeed.bind(null, {
   strategy: 'mobile'
 }));
 
-/* The below to "// End" is from:
+/* The below to "// End" is originally from:
    https://github.com/greypants/gulp-starter/blob/master/gulp/tasks/browserify.js
 */
 /* browserify task
@@ -202,9 +202,7 @@ var browserify   = require('browserify');
 var watchify     = require('watchify');
 var source       = require('vinyl-source-stream');
 
-// TODO: check if worth running jshint in parallel?
-// TODO: check if we need browserify elsewhere in the task run definitions
-gulp.task('browserify', ['jshint'], function() {
+gulp.task('browserify', function() {
 
   var bundler = browserify({
     // Required watchify args
@@ -214,14 +212,15 @@ gulp.task('browserify', ['jshint'], function() {
     // Add file extentions to make optional in your requires
     extensions: [],
     // Enable source maps!
-    debug: true
+    debug: true,
+    transform: ['reactify']
   });
 
   var bundle = function() {
     return bundler
       .bundle()
       .on('error', function(e) {
-        console.log('Browserify error:', e);
+        console.log(e.message);
         this.emit('end');
       })
       // Use vinyl-source-stream to make the
@@ -230,7 +229,6 @@ gulp.task('browserify', ['jshint'], function() {
       .pipe(source('bundle.js'))
       // Specify the output destination
       .pipe(gulp.dest('./app/scripts/'))
-      .on('end', function() {}); // TODO: check that this is needed
   };
 
   if(global.isWatching) {
