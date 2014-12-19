@@ -140,7 +140,7 @@ gulp.task('html', function () {
 gulp.task('clean', del.bind(null, ['.tmp', 'dist/*', '!dist/.git'], {dot: true}));
 
 // Watch Files For Changes & Reload
-gulp.task('serve', ['styles', 'browserify'], function () {
+gulp.task('serve', ['styles', 'scripts'], function () {
   browserSync({
     notify: false,
     // Customize the BrowserSync console logging prefix
@@ -154,7 +154,7 @@ gulp.task('serve', ['styles', 'browserify'], function () {
 
   gulp.watch(['app/**/*.html'], reload);
   gulp.watch(['app/styles/**/*.{scss,css}'], ['styles', reload]);
-  gulp.watch(['app/scripts/**/*.js', 'app/scripts/**/*.jsx', '!app/scripts/bundle.js'], ['jshint', 'browserify', reload]);
+  gulp.watch(['app/scripts/**/*.js', 'app/scripts/**/*.jsx', '!app/scripts/bundle.js'], ['jshint', 'scripts', reload]);
   gulp.watch(['app/images/**/*'], reload);
 });
 
@@ -202,7 +202,7 @@ var browserify   = require('browserify');
 var watchify     = require('watchify');
 var source       = require('vinyl-source-stream');
 
-gulp.task('browserify', function() {
+gulp.task('scripts', function() {
 
   var bundler = browserify({
     // Required watchify args
