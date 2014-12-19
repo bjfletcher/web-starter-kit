@@ -41,7 +41,7 @@ var AUTOPREFIXER_BROWSERS = [
 
 // Lint JavaScript
 gulp.task('jshint', function () {
-  return gulp.src(['app/scripts/**/*.js', 'app/scripts/**/*.js', '!app/scripts/bundle.js'])
+  return gulp.src(['app/scripts/**/*.js', 'app/scripts/**/*.js', '!app/scripts/bundle.js', '!app/scripts/react.js'])
 //    .pipe(browserSync.reload({stream: true, once: true}))
     .pipe($.jshint())
     .pipe($.jshint.reporter('jshint-stylish'))
@@ -153,7 +153,7 @@ gulp.task('serve', ['styles', 'scripts'], function () {
 
   gulp.watch(['app/**/*.html'], browserSync.reload);
   gulp.watch(['app/styles/**/*.{scss,css}'], ['styles', browserSync.reload]);
-  gulp.watch(['app/scripts/**/*.js', 'app/scripts/**/*.jsx', '!app/scripts/bundle.js'], ['jshint', 'scripts']);
+  gulp.watch(['app/scripts/**/*.js', 'app/scripts/**/*.jsx', '!app/scripts/bundle.js', '!app/scripts/react.js'], ['jshint', 'scripts']);
   gulp.watch(['app/images/**/*'], browserSync.reload);
 });
 
@@ -196,14 +196,15 @@ var reactify = require('reactify');
 
 var bundler = watchify(browserify('./app/scripts/index.js', watchify.args));
 // add any other browserify options or transforms here
-//bundler.external('react');
+bundler.external('react'); // react is a biggie and will be in a separate bundle (see 'react' task)
 bundler.transform('reactify');
 
 gulp.task('scripts', bundle); // so you can run `gulp js` to build the file
 bundler.on('update', bundle); // on any dep update, runs the bundler
 
 function bundle() {
-  return bundler.bundle()
+  return bundler
+    .bundle()
     .on('error', function(e) { console.log(e.message); this.emit('end'); })
     .pipe(source('bundle.js'))
     .pipe(gulp.dest('./app/scripts/'))
@@ -211,13 +212,14 @@ function bundle() {
 }
 // END
 
-//gulp.task('react', function() {
-//  return browserify('react')
-//    .bundle()
-//    .on('error', function(e) { console.log(e.message); this.emit('end'); })
-//    .pipe(source('react.js'))
-//    .pipe(gulp.dest('./app/scripts/'))
-//});
+gulp.task('react', function() {
+  return browserify()
+    .require('react', { expose: 'react' }) // expose makes it available to our code elsewhere
+    .bundle()
+    .on('error', function(e) { console.log(e.message); this.emit('end'); })
+    .pipe(source('react.js'))
+    .pipe(gulp.dest('./app/scripts/'))
+});
 
 // Load custom tasks from the `tasks` directory
 // try { require('require-dir')('tasks'); } catch (err) { console.error(err); }

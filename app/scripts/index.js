@@ -1,4 +1,4 @@
 require('./default');
-var React = require('react');
 var view = require('./view.jsx');
+var React = require('react');
 React.render(view(), document.getElementById('view'));
