@@ -26,7 +26,6 @@ var del = require('del');
 var runSequence = require('run-sequence');
 var browserSync = require('browser-sync');
 var pagespeed = require('psi');
-var reload = browserSync.reload;
 
 var AUTOPREFIXER_BROWSERS = [
   'ie >= 10',
@@ -43,7 +42,7 @@ var AUTOPREFIXER_BROWSERS = [
 // Lint JavaScript
 gulp.task('jshint', function () {
   return gulp.src(['app/scripts/**/*.js', 'app/scripts/**/*.js', '!app/scripts/bundle.js'])
-//    .pipe(reload({stream: true, once: true}))
+//    .pipe(browserSync.reload({stream: true, once: true}))
     .pipe($.jshint())
     .pipe($.jshint.reporter('jshint-stylish'))
     .pipe($.if(!browserSync.active, $.jshint.reporter('fail')));
@@ -152,10 +151,10 @@ gulp.task('serve', ['styles', 'scripts'], function () {
     server: ['.tmp', 'app']
   });
 
-  gulp.watch(['app/**/*.html'], reload);
-  gulp.watch(['app/styles/**/*.{scss,css}'], ['styles', reload]);
-  gulp.watch(['app/scripts/**/*.js', 'app/scripts/**/*.jsx', '!app/scripts/bundle.js'], ['jshint', 'scripts', reload]);
-  gulp.watch(['app/images/**/*'], reload);
+  gulp.watch(['app/**/*.html'], browserSync.reload);
+  gulp.watch(['app/styles/**/*.{scss,css}'], ['styles', browserSync.reload]);
+  gulp.watch(['app/scripts/**/*.js', 'app/scripts/**/*.jsx', '!app/scripts/bundle.js'], ['jshint', 'scripts']);
+  gulp.watch(['app/images/**/*'], browserSync.reload);
 });
 
 // Build and serve the output from the dist build
@@ -172,6 +171,7 @@ gulp.task('serve:dist', ['default'], function () {
 });
 
 // Build Production Files, the Default Task
+// TODO: need to add JS build tasks to this
 gulp.task('default', ['clean'], function (cb) {
   runSequence('styles', ['jshint', 'html', 'images', 'fonts', 'copy'], cb);
 });
@@ -187,62 +187,37 @@ gulp.task('pagespeed', pagespeed.bind(null, {
   strategy: 'mobile'
 }));
 
-/* The below to "// End" is originally from:
-   https://github.com/greypants/gulp-starter/blob/master/gulp/tasks/browserify.js
-*/
-/* browserify task
-   ---------------
-   Bundle javascripty things with browserify!
-   This task is set up to generate multiple separate bundles, from
-   different sources, and to use Watchify when run from the default task.
-   See browserify.bundleConfigs in gulp/config.js
-*/
+// The below to "// END" is from:
+// https://github.com/gulpjs/gulp/blob/master/docs/recipes/fast-browserify-builds-with-watchify.md
+var source = require('vinyl-source-stream');
+var watchify = require('watchify');
+var browserify = require('browserify');
+var reactify = require('reactify');
 
-var browserify   = require('browserify');
-var watchify     = require('watchify');
-var source       = require('vinyl-source-stream');
+var bundler = watchify(browserify('./app/scripts/index.js', watchify.args));
+// add any other browserify options or transforms here
+//bundler.external('react');
+bundler.transform('reactify');
 
-gulp.task('scripts', function() {
+gulp.task('scripts', bundle); // so you can run `gulp js` to build the file
+bundler.on('update', bundle); // on any dep update, runs the bundler
 
-  var bundler = browserify({
-    // Required watchify args
-    cache: {}, packageCache: {}, fullPaths: true,
-    // Specify the entry point of your app
-    entries: './app/scripts/main.js',
-    // Add file extentions to make optional in your requires
-    extensions: [],
-    // Enable source maps!
-    debug: true,
-    transform: ['reactify']
-  });
+function bundle() {
+  return bundler.bundle()
+    .on('error', function(e) { console.log(e.message); this.emit('end'); })
+    .pipe(source('bundle.js'))
+    .pipe(gulp.dest('./app/scripts/'))
+    .pipe(browserSync.reload({ stream: true }))
+}
+// END
 
-  var bundle = function() {
-    return bundler
-      .bundle()
-      .on('error', function(e) {
-        console.log(e.message);
-        this.emit('end');
-      })
-      // Use vinyl-source-stream to make the
-      // stream gulp compatible. Specifiy the
-      // desired output filename here.
-      .pipe(source('bundle.js'))
-      // Specify the output destination
-      .pipe(gulp.dest('./app/scripts/'))
-  };
-
-  if(global.isWatching) {
-    // Wrap with watchify and rebundle on changes
-    bundler = watchify(bundler);
-    // Rebundle on update
-    bundler.on('update', bundle);
-  }
-  
-  return bundle();
-
-});
-
-// End
+//gulp.task('react', function() {
+//  return browserify('react')
+//    .bundle()
+//    .on('error', function(e) { console.log(e.message); this.emit('end'); })
+//    .pipe(source('react.js'))
+//    .pipe(gulp.dest('./app/scripts/'))
+//});
 
 // Load custom tasks from the `tasks` directory
 // try { require('require-dir')('tasks'); } catch (err) { console.error(err); }

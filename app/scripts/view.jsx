@@ -4,7 +4,7 @@ var MyView = React.createClass({
   render: function(){
     return (
       <h2>
-        This is a RenderJS view.
+        This is a ReactJS view.
       </h2>
     );
   }
