@@ -60,7 +60,7 @@ React.render(view(), document.getElementById('view'));
 var React = require('react');
 
 var MyView = React.createClass({displayName: "MyView",
-  render: function(){
+  render:function() {
     return (
       React.createElement("h2", null, 
         "This is a ReactJS view."
