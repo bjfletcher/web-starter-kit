@@ -197,7 +197,7 @@ var reactify = require('reactify');
 var bundler = watchify(browserify('./app/scripts/index.js', watchify.args));
 // add any other browserify options or transforms here
 bundler.external('react'); // react is a biggie and will be in a separate bundle (see 'react' task)
-bundler.transform('reactify');
+bundler.transform('reactify', { es6: true });
 
 gulp.task('scripts', bundle); // so you can run `gulp js` to build the file
 bundler.on('update', bundle); // on any dep update, runs the bundler
