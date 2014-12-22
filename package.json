@@ -26,6 +26,7 @@
     "opn": "^1.0.0",
     "psi": "^0.1.2",
     "react": "^0.12.2",
+    "react-router": "^0.11.6",
     "reactify": "^0.17.1",
     "require-dir": "^0.1.0",
     "run-sequence": "^1.0.1",

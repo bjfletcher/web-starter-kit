@@ -41,7 +41,7 @@ var AUTOPREFIXER_BROWSERS = [
 
 // Lint JavaScript
 gulp.task('jshint', function () {
-  return gulp.src(['app/scripts/**/*.js', 'app/scripts/**/*.js', '!app/scripts/bundle.js', '!app/scripts/react.js'])
+  return gulp.src(['app/scripts/**/*.js', 'app/scripts/**/*.js', '!app/scripts/bundles/**/*'])
 //    .pipe(browserSync.reload({stream: true, once: true}))
     .pipe($.jshint())
     .pipe($.jshint.reporter('jshint-stylish'))
@@ -153,7 +153,7 @@ gulp.task('serve', ['styles', 'scripts'], function () {
 
   gulp.watch(['app/**/*.html'], browserSync.reload);
   gulp.watch(['app/styles/**/*.{scss,css}'], ['styles', browserSync.reload]);
-  gulp.watch(['app/scripts/**/*.js', 'app/scripts/**/*.jsx', '!app/scripts/bundle.js', '!app/scripts/react.js'], ['jshint', 'scripts']);
+  gulp.watch(['app/scripts/**/*.js', 'app/scripts/**/*.jsx', '!app/scripts/bundles/**/*'], ['jshint', 'scripts']);
   gulp.watch(['app/images/**/*'], browserSync.reload);
 });
 
@@ -196,29 +196,33 @@ var reactify = require('reactify');
 
 var bundler = watchify(browserify('./app/scripts/index.jsx', watchify.args));
 // add any other browserify options or transforms here
-bundler.external('react'); // react is a biggie and will be in a separate bundle (see 'react' task)
+bundler.external(['react', 'react/addons', 'flux', 'react-router', 'events']); // libs are put in a separate bundle (see task 'lib')
 bundler.transform('reactify', { es6: true });
-
-gulp.task('scripts', bundle); // so you can run `gulp js` to build the file
-bundler.on('update', bundle); // on any dep update, runs the bundler
 
 function bundle() {
   return bundler
     .bundle()
     .on('error', function(e) { console.log(e.message); this.emit('end'); })
-    .pipe(source('bundle.js'))
-    .pipe(gulp.dest('./app/scripts/'))
+    .pipe(source('app.js'))
+    .pipe(gulp.dest('./app/scripts/bundles'))
     .pipe(browserSync.reload({ stream: true }))
 }
+
+gulp.task('scripts', bundle); // so you can run `gulp js` to build the file
+bundler.on('update', bundle); // on any dep update, runs the bundler
 // END
 
-gulp.task('react', function() {
+gulp.task('lib', function() {
   return browserify()
     .require('react', { expose: 'react' }) // expose makes it available to our code elsewhere
+    .require('react/addons', { expose: 'react/addons' }) // expose makes it available to our code elsewhere
+    .require('flux', { expose: 'flux' }) // expose makes it available to our code elsewhere
+    .require('react-router', { expose: 'react-router' }) // expose makes it available to our code elsewhere
+    .require('events', { expose: 'events' }) // expose makes it available to our code elsewhere
     .bundle()
     .on('error', function(e) { console.log(e.message); this.emit('end'); })
-    .pipe(source('react.js'))
-    .pipe(gulp.dest('./app/scripts/'))
+    .pipe(source('lib.js'))
+    .pipe(gulp.dest('./app/scripts/bundles'))
 });
 
 // Load custom tasks from the `tasks` directory

@@ -14,7 +14,8 @@
 @import 'components/components';
 
 html,
-body {
+body,
+.app {
   width: 100%;
   height: 100%;
   margin: 0;
@@ -30,7 +31,7 @@ body {
   min-height: 100%;
 }
 
-body.open {
+.app.open {
   overflow: hidden;
 }
 
@@ -312,7 +313,7 @@ main {
     min-height: initial;
   }
 
-  body {
+  .app {
     overflow-y: scroll;
   }
 }

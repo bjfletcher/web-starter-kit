@@ -1,8 +1,8 @@
-var React = require('react');
+var React = require('react/addons');
 var Store = require('../stores/ArticleStore');
 var Actors = require('../Actors');
 
-var Articles = React.createClass({
+module.exports = React.createClass({
 
     getInitialState() {
         return {
@@ -30,13 +30,13 @@ var Articles = React.createClass({
             articles.push(<p>{v}</p>);
         });
         return (
-            <div>
+            <main onClick={this.props.onClick}>
                 <h2>
                     Articles
                 </h2>
                 {articles}
                 <a href className="button--primary" onClick={this.onCreateArticle}>Create Article</a>
-            </div>
+            </main>
         );
     },
 
@@ -46,5 +46,3 @@ var Articles = React.createClass({
     }
 
 });
-
-module.exports = Articles;
