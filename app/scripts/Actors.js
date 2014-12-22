@@ -8,7 +8,7 @@ module.exports = {
     createArticle(text) {
         Dispatcher.dispatch({
             type: ActionTypes.CREATE_ARTICLE,
-            text: text
+            data: text
         });
     }
 

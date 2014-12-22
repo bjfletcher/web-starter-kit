@@ -2,25 +2,40 @@
 
 var EventEmitter = require('events').EventEmitter;
 var Dispatcher = require('../Dispatcher');
-var Constants = require('../Constants');
+var ActionTypes = require('../Constants').ActionTypes;
 
 var ArticleStore = class extends EventEmitter {
 
     constructor() {
         this.articles = [];
-        Dispatcher.register(this.handleAction);
+        var that = this;
+        Dispatcher.register(action => {
+            that.handleAction(action);
+        });
     }
 
     handleAction(action) {
-        if (action.type === Constants.CREATE_ARTICLE) {
+        if (action.type === ActionTypes.CREATE_ARTICLE) {
             this.add(action.data);
             this.emitChange();
         }
         return true;
     }
 
+    addChangeListener(callback) {
+        this.addListener('change', callback);
+    }
+
+    removeChangeListener(callback) {
+        this.removeListener('change', callback);
+    }
+
     emitChange() {
         this.emit('change');
+    }
+
+    getAll() {
+        return this.articles;
     }
 
     add(article) {

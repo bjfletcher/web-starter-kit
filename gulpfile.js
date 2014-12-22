@@ -194,7 +194,7 @@ var watchify = require('watchify');
 var browserify = require('browserify');
 var reactify = require('reactify');
 
-var bundler = watchify(browserify('./app/scripts/index.js', watchify.args));
+var bundler = watchify(browserify('./app/scripts/index.jsx', watchify.args));
 // add any other browserify options or transforms here
 bundler.external('react'); // react is a biggie and will be in a separate bundle (see 'react' task)
 bundler.transform('reactify', { es6: true });

@@ -1,10 +1,13 @@
-(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({"./app/scripts/index.js":[function(require,module,exports){
+(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({"./app/scripts/index.jsx":[function(require,module,exports){
 require('./default');
-var articles = require('./components/articles.jsx');
+var Articles = require('./components/Articles.jsx');
 var React = require('react');
-React.render(articles(), document.getElementById('articles'));
+var Store = require('./stores/ArticleStore.js');
+Store.add('ReactJS');
+Store.add('Browserify');
+React.render(React.createElement(Articles, null), document.getElementById('articles'));
 
-},{"./components/articles.jsx":"/Users/ben/projects/wsk/web-starter-kit/app/scripts/components/articles.jsx","./default":"/Users/ben/projects/wsk/web-starter-kit/app/scripts/default.js","react":"react"}],"/Users/ben/projects/wsk/web-starter-kit/app/scripts/Actors.js":[function(require,module,exports){
+},{"./components/Articles.jsx":"/Users/ben/projects/wsk/web-starter-kit/app/scripts/components/Articles.jsx","./default":"/Users/ben/projects/wsk/web-starter-kit/app/scripts/default.js","./stores/ArticleStore.js":"/Users/ben/projects/wsk/web-starter-kit/app/scripts/stores/ArticleStore.js","react":"react"}],"/Users/ben/projects/wsk/web-starter-kit/app/scripts/Actors.js":[function(require,module,exports){
 'use strict';
 
 var Dispatcher = require('./Dispatcher');
@@ -15,7 +18,7 @@ module.exports = {
     createArticle:function(text) {
         Dispatcher.dispatch({
             type: ActionTypes.CREATE_ARTICLE,
-            text: text
+            data: text
         });
     }
 
@@ -33,19 +36,54 @@ module.exports = {
 var Dispatcher = require('flux').Dispatcher;
 
 module.exports = new Dispatcher();
-},{"flux":"/Users/ben/projects/wsk/web-starter-kit/node_modules/flux/index.js"}],"/Users/ben/projects/wsk/web-starter-kit/app/scripts/components/articles.jsx":[function(require,module,exports){
+},{"flux":"/Users/ben/projects/wsk/web-starter-kit/node_modules/flux/index.js"}],"/Users/ben/projects/wsk/web-starter-kit/app/scripts/components/Articles.jsx":[function(require,module,exports){
 var React = require('react');
-var ArticleStore = require('../stores/ArticleStore');
+var Store = require('../stores/ArticleStore');
 var Actors = require('../Actors');
 
 var Articles = React.createClass({displayName: "Articles",
+
+    getInitialState:function() {
+        return {
+            articles: Store.getAll()
+        }
+    },
+
+    componentDidMount:function() {
+        Store.addChangeListener(this._onStoreChange);
+    },
+
+    componentWillUnmount:function() {
+        Store.removeChangeListener(this._onStoreChange);
+    },
+
+    _onStoreChange:function() {
+        this.setState({
+            articles: Store.getAll()
+        });
+    },
+
     render:function() {
+        var articles = [];
+        this.state.articles.map(function(v)  {
+            articles.push(React.createElement("p", null, v));
+        });
         return (
-            React.createElement("h2", null, 
-                "Articles"
+            React.createElement("div", null, 
+                React.createElement("h2", null, 
+                    "Articles"
+                ), 
+                articles, 
+                React.createElement("a", {href: true, className: "button--primary", onClick: this.onCreateArticle}, "Create Article")
             )
         );
+    },
+
+    onCreateArticle:function() {
+        Actors.createArticle('Some Fruit');
+        event.preventDefault();
     }
+
 });
 
 module.exports = Articles;
@@ -106,32 +144,47 @@ module.exports = Articles;
 
 var EventEmitter = require('events').EventEmitter;
 var Dispatcher = require('../Dispatcher');
-var Constants = require('../Constants');
+var ActionTypes = require('../Constants').ActionTypes;
 
-var ArticleStore = (function(){for(var EventEmitter____Key in EventEmitter){if(EventEmitter.hasOwnProperty(EventEmitter____Key)){____Class4[EventEmitter____Key]=EventEmitter[EventEmitter____Key];}}var ____SuperProtoOfEventEmitter=EventEmitter===null?null:EventEmitter.prototype;____Class4.prototype=Object.create(____SuperProtoOfEventEmitter);____Class4.prototype.constructor=____Class4;____Class4.__superConstructor__=EventEmitter;
+var ArticleStore = (function(){for(var EventEmitter____Key in EventEmitter){if(EventEmitter.hasOwnProperty(EventEmitter____Key)){____Class8[EventEmitter____Key]=EventEmitter[EventEmitter____Key];}}var ____SuperProtoOfEventEmitter=EventEmitter===null?null:EventEmitter.prototype;____Class8.prototype=Object.create(____SuperProtoOfEventEmitter);____Class8.prototype.constructor=____Class8;____Class8.__superConstructor__=EventEmitter;
 
-    function ____Class4() {
+    function ____Class8() {
         this.articles = [];
-        Dispatcher.register(this.handleAction);
+        var that = this;
+        Dispatcher.register(function(action)  {
+            that.handleAction(action);
+        });
     }
 
-    ____Class4.prototype.handleAction=function(action) {
-        if (action.type === Constants.CREATE_ARTICLE) {
+    ____Class8.prototype.handleAction=function(action) {
+        if (action.type === ActionTypes.CREATE_ARTICLE) {
             this.add(action.data);
             this.emitChange();
         }
         return true;
     };
 
-    ____Class4.prototype.emitChange=function() {
+    ____Class8.prototype.addChangeListener=function(callback) {
+        this.addListener('change', callback);
+    };
+
+    ____Class8.prototype.removeChangeListener=function(callback) {
+        this.removeListener('change', callback);
+    };
+
+    ____Class8.prototype.emitChange=function() {
         this.emit('change');
     };
 
-    ____Class4.prototype.add=function(article) {
+    ____Class8.prototype.getAll=function() {
+        return this.articles;
+    };
+
+    ____Class8.prototype.add=function(article) {
         this.articles.push(article);
     };
 
-return ____Class4;})();
+return ____Class8;})();
 
 module.exports = new ArticleStore();
 
@@ -757,4 +810,4 @@ var invariant = function(condition, format, a, b, c, d, e, f) {
 
 module.exports = invariant;
 
-},{}]},{},["./app/scripts/index.js"]);
+},{}]},{},["./app/scripts/index.jsx"]);
