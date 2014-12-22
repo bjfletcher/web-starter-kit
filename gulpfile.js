@@ -139,7 +139,7 @@ gulp.task('html', function () {
 gulp.task('clean', del.bind(null, ['.tmp', 'dist/*', '!dist/.git'], {dot: true}));
 
 // Watch Files For Changes & Reload
-gulp.task('serve', ['styles', 'scripts'], function () {
+gulp.task('serve', ['styles', 'lib', 'scripts'], function () {
   browserSync({
     notify: false,
     // Customize the BrowserSync console logging prefix
@@ -173,7 +173,7 @@ gulp.task('serve:dist', ['default'], function () {
 // Build Production Files, the Default Task
 // TODO: need to add JS build tasks to this
 gulp.task('default', ['clean'], function (cb) {
-  runSequence('styles', ['jshint', 'html', 'images', 'fonts', 'copy'], cb);
+  runSequence('styles', ['jshint', 'lib', 'scripts', 'html', 'images', 'fonts', 'copy'], cb);
 });
 
 // Run PageSpeed Insights
