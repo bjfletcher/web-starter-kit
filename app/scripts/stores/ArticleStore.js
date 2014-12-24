@@ -7,7 +7,7 @@ var ActionTypes = require('../Constants').ActionTypes;
 var ArticleStore = class extends EventEmitter {
 
     constructor() {
-        this.articles = [];
+        this.articles = require('./articles.json');
         var that = this;
         Dispatcher.register(action => {
             that.handleAction(action);

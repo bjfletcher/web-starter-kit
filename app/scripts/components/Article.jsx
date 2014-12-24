@@ -6,6 +6,8 @@ var {Link, RouteHandler } = Router;
 
 module.exports = React.createClass({
 
+    mixins: [ Router.State ],
+
     getInitialState() {
         return {
             articles: Store.getAll()
@@ -27,23 +29,29 @@ module.exports = React.createClass({
     },
 
     render() {
-        var articles = [];
-        this.state.articles.map(article => {
-            articles.push(
+        var articleId = this.getParams().articleId;
+        var article;
+        this.state.articles.forEach(thatArticle => {
+            if (thatArticle.id === articleId) {
+                article = thatArticle;
+            }
+        });
+        var comments = [];
+        article.comments.map(comment => {
+            comments.push(
                 <article>
-                    <h2>{article.title}</h2>
-                    <p>{article.body}</p>
-                    <Link to='article' params={{articleId: article.id}} className='cta--primary'>Read More</Link>
+                    <h2>Comment</h2>
+                    <p>{comment.body}</p>
                 </article>
             );
         });
         return (
             <main onClick={this.props.onClick}>
-                <h1>
-                    Articles
-                </h1>
-                {articles}
-                <a href className="button--primary" onClick={this.onCreateArticle}>Create Article</a>
+                <h1>{article.title}</h1>
+                <p>{article.body}</p>
+                <h2>Comments</h2>
+                {comments}
+                <Link to='articles' className="button--primary">Go Back</Link>
             </main>
         );
     },

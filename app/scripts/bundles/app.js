@@ -4,30 +4,33 @@ var Router = require('react-router');
 var $__0=         Router,DefaultRoute=$__0.DefaultRoute,Link=$__0.Link,NotFoundRoute=$__0.NotFoundRoute,Redirect=$__0.Redirect,Route=$__0.Route,RouteHandler=$__0.RouteHandler;
 
 var App = require('./components/App.jsx');
+var Homepage = require('./components/Homepage.jsx');
 var Main = require('./components/Main.jsx');
 var Articles = require('./components/Articles.jsx');
-var ArticleStore = require('./stores/ArticleStore');
-
-ArticleStore.add('ReactJS');
-ArticleStore.add('Browserify');
+var Article = require('./components/Article.jsx');
+var Editor = require('./components/Editor.jsx');
 
 // TODO: understand what path is if not defined - e.g., remove path=articles for name=articles
 var routes = (
-    React.createElement(Route, {handler: App, path: "/"}, 
-        React.createElement(DefaultRoute, {handler: Main}), 
-        React.createElement(Route, {name: "articles", handler: Articles})
+    React.createElement(Route, {handler: App}, 
+        React.createElement(Route, {name: "/", handler: Homepage}, 
+            React.createElement(DefaultRoute, {handler: Main}), 
+            React.createElement(Route, {name: "articles", handler: Articles}), 
+            React.createElement(Route, {name: "article", path: "article/:articleId", handler: Article})
+        ), 
+        React.createElement(Route, {name: "editor", handler: Editor})
     )
 );
 
-//Router.run(routes, function (Handler) {
-//  React.render(<Handler />, document.body);
-//});
+Router.run(routes, function (Handler) {
+  React.render(React.createElement(Handler, null), document.body);
+});
 
 // Or, if you'd like to use the HTML5 history API for cleaner URLs:
 
-Router.run(routes, Router.HistoryLocation, function (Handler) {
-    React.render(React.createElement(Handler, null), document.body);
-});
+//Router.run(routes, Router.HistoryLocation, function (Handler) {
+//    React.render(<Handler />, document.body);
+//});
 
 //React.render(<App />, document.body);
 
@@ -40,7 +43,7 @@ Router.run(routes, '/about', (Handler, state) => {
 });
 */
 
-},{"./components/App.jsx":"/Users/ben/projects/wsk/web-starter-kit/app/scripts/components/App.jsx","./components/Articles.jsx":"/Users/ben/projects/wsk/web-starter-kit/app/scripts/components/Articles.jsx","./components/Main.jsx":"/Users/ben/projects/wsk/web-starter-kit/app/scripts/components/Main.jsx","./stores/ArticleStore":"/Users/ben/projects/wsk/web-starter-kit/app/scripts/stores/ArticleStore.js","react-router":"react-router","react/addons":"react/addons"}],"/Users/ben/projects/wsk/web-starter-kit/app/scripts/Actors.js":[function(require,module,exports){
+},{"./components/App.jsx":"/Users/ben/projects/wsk/web-starter-kit/app/scripts/components/App.jsx","./components/Article.jsx":"/Users/ben/projects/wsk/web-starter-kit/app/scripts/components/Article.jsx","./components/Articles.jsx":"/Users/ben/projects/wsk/web-starter-kit/app/scripts/components/Articles.jsx","./components/Editor.jsx":"/Users/ben/projects/wsk/web-starter-kit/app/scripts/components/Editor.jsx","./components/Homepage.jsx":"/Users/ben/projects/wsk/web-starter-kit/app/scripts/components/Homepage.jsx","./components/Main.jsx":"/Users/ben/projects/wsk/web-starter-kit/app/scripts/components/Main.jsx","react-router":"react-router","react/addons":"react/addons"}],"/Users/ben/projects/wsk/web-starter-kit/app/scripts/Actors.js":[function(require,module,exports){
 'use strict';
 
 var Dispatcher = require('./Dispatcher');
@@ -71,46 +74,90 @@ var Dispatcher = require('flux').Dispatcher;
 module.exports = new Dispatcher();
 },{"flux":"flux"}],"/Users/ben/projects/wsk/web-starter-kit/app/scripts/components/App.jsx":[function(require,module,exports){
 var React = require('react/addons');
-var cx = React.addons.classSet;
 var Router = require('react-router');
-var $__0=    Router,Link=$__0.Link,RouteHandler=$__0.RouteHandler;
-var Header = require('./Header.jsx');
-var Nav = require('./Nav.jsx');
-var Main = require('./Main.jsx');
+var $__0=    Router,RouteHandler=$__0.RouteHandler;
 
 module.exports = React.createClass({displayName: "exports",
 
-    getInitialState:function() {
-        return {
-            isShowingMenu: false
-        }
-    },
-
-    onToggleMenu:function() {
-        this.setState({ isShowingMenu: !this.state.isShowingMenu }); 
-    },
-
-    onCloseMenu:function() {
-        console.log('closing!');
-        this.setState({ isShowingMenu: false });
-        event.preventDefault();
-    },
-
     render:function() {
         return ( 
-            React.createElement("div", {className: "app"}, 
-                React.createElement(Header, {isShowingMenu: this.state.isShowingMenu, onToggleMenu: this.onToggleMenu}), 
-                React.createElement(Nav, {isShowingMenu: this.state.isShowingMenu, onLink: this.onCloseMenu}), 
-                React.createElement(RouteHandler, {onClick: this.onCloseMenu})
-            )
+            React.createElement(RouteHandler, null)
         );
     }
+
 });
 
-},{"./Header.jsx":"/Users/ben/projects/wsk/web-starter-kit/app/scripts/components/Header.jsx","./Main.jsx":"/Users/ben/projects/wsk/web-starter-kit/app/scripts/components/Main.jsx","./Nav.jsx":"/Users/ben/projects/wsk/web-starter-kit/app/scripts/components/Nav.jsx","react-router":"react-router","react/addons":"react/addons"}],"/Users/ben/projects/wsk/web-starter-kit/app/scripts/components/Articles.jsx":[function(require,module,exports){
+},{"react-router":"react-router","react/addons":"react/addons"}],"/Users/ben/projects/wsk/web-starter-kit/app/scripts/components/Article.jsx":[function(require,module,exports){
 var React = require('react/addons');
 var Store = require('../stores/ArticleStore');
 var Actors = require('../Actors');
+var Router = require('react-router');
+var $__0=    Router,Link=$__0.Link,RouteHandler=$__0.RouteHandler;
+
+module.exports = React.createClass({displayName: "exports",
+
+    mixins: [ Router.State ],
+
+    getInitialState:function() {
+        return {
+            articles: Store.getAll()
+        }
+    },
+
+    componentDidMount:function() {
+        Store.addChangeListener(this._onStoreChange);
+    },
+
+    componentWillUnmount:function() {
+        Store.removeChangeListener(this._onStoreChange);
+    },
+
+    _onStoreChange:function() {
+        this.setState({
+            articles: Store.getAll()
+        });
+    },
+
+    render:function() {
+        var articleId = this.getParams().articleId;
+        var article;
+        this.state.articles.forEach(function(thatArticle)  {
+            if (thatArticle.id === articleId) {
+                article = thatArticle;
+            }
+        });
+        var comments = [];
+        article.comments.map(function(comment)  {
+            comments.push(
+                React.createElement("article", null, 
+                    React.createElement("h2", null, "Comment"), 
+                    React.createElement("p", null, comment.body)
+                )
+            );
+        });
+        return (
+            React.createElement("main", {onClick: this.props.onClick}, 
+                React.createElement("h1", null, article.title), 
+                React.createElement("p", null, article.body), 
+                React.createElement("h2", null, "Comments"), 
+                comments, 
+                React.createElement(Link, {to: "articles", className: "button--primary"}, "Go Back")
+            )
+        );
+    },
+
+    onCreateArticle:function() {
+        Actors.createArticle('Some Fruit');
+        event.preventDefault();
+    }
+
+});
+},{"../Actors":"/Users/ben/projects/wsk/web-starter-kit/app/scripts/Actors.js","../stores/ArticleStore":"/Users/ben/projects/wsk/web-starter-kit/app/scripts/stores/ArticleStore.js","react-router":"react-router","react/addons":"react/addons"}],"/Users/ben/projects/wsk/web-starter-kit/app/scripts/components/Articles.jsx":[function(require,module,exports){
+var React = require('react/addons');
+var Store = require('../stores/ArticleStore');
+var Actors = require('../Actors');
+var Router = require('react-router');
+var $__0=    Router,Link=$__0.Link,RouteHandler=$__0.RouteHandler;
 
 module.exports = React.createClass({displayName: "exports",
 
@@ -136,12 +183,18 @@ module.exports = React.createClass({displayName: "exports",
 
     render:function() {
         var articles = [];
-        this.state.articles.map(function(v)  {
-            articles.push(React.createElement("p", null, v));
+        this.state.articles.map(function(article)  {
+            articles.push(
+                React.createElement("article", null, 
+                    React.createElement("h2", null, article.title), 
+                    React.createElement("p", null, article.body), 
+                    React.createElement(Link, {to: "article", params: {articleId: article.id}, className: "cta--primary"}, "Read More")
+                )
+            );
         });
         return (
             React.createElement("main", {onClick: this.props.onClick}, 
-                React.createElement("h2", null, 
+                React.createElement("h1", null, 
                     "Articles"
                 ), 
                 articles, 
@@ -156,7 +209,25 @@ module.exports = React.createClass({displayName: "exports",
     }
 
 });
-},{"../Actors":"/Users/ben/projects/wsk/web-starter-kit/app/scripts/Actors.js","../stores/ArticleStore":"/Users/ben/projects/wsk/web-starter-kit/app/scripts/stores/ArticleStore.js","react/addons":"react/addons"}],"/Users/ben/projects/wsk/web-starter-kit/app/scripts/components/Header.jsx":[function(require,module,exports){
+},{"../Actors":"/Users/ben/projects/wsk/web-starter-kit/app/scripts/Actors.js","../stores/ArticleStore":"/Users/ben/projects/wsk/web-starter-kit/app/scripts/stores/ArticleStore.js","react-router":"react-router","react/addons":"react/addons"}],"/Users/ben/projects/wsk/web-starter-kit/app/scripts/components/Editor.jsx":[function(require,module,exports){
+var React = require('react/addons');
+var cx = React.addons.classSet;
+var Router = require('react-router');
+var $__0=    Router,Link=$__0.Link,RouteHandler=$__0.RouteHandler;
+
+module.exports = React.createClass({displayName: "exports",
+
+    render:function() {
+        return ( 
+            React.createElement("div", null, 
+                React.createElement("h1", null, "Editor"), 
+                React.createElement(RouteHandler, null)
+            )
+        );
+    }
+});
+
+},{"react-router":"react-router","react/addons":"react/addons"}],"/Users/ben/projects/wsk/web-starter-kit/app/scripts/components/Header.jsx":[function(require,module,exports){
 var React = require('react/addons');
 var cx = React.addons.classSet;
 
@@ -178,7 +249,44 @@ module.exports = React.createClass({displayName: "exports",
     }
 });
 
-},{"react/addons":"react/addons"}],"/Users/ben/projects/wsk/web-starter-kit/app/scripts/components/Main.jsx":[function(require,module,exports){
+},{"react/addons":"react/addons"}],"/Users/ben/projects/wsk/web-starter-kit/app/scripts/components/Homepage.jsx":[function(require,module,exports){
+var React = require('react/addons');
+var cx = React.addons.classSet;
+var Router = require('react-router');
+var $__0=    Router,Link=$__0.Link,RouteHandler=$__0.RouteHandler;
+var Header = require('./Header.jsx');
+var Nav = require('./Nav.jsx');
+var Main = require('./Main.jsx');
+
+module.exports = React.createClass({displayName: "exports",
+
+    getInitialState:function() {
+        return {
+            isShowingMenu: false
+        }
+    },
+
+    onToggleMenu:function() {
+        this.setState({ isShowingMenu: !this.state.isShowingMenu }); 
+    },
+
+    onCloseMenu:function() {
+        this.setState({ isShowingMenu: false });
+        event.preventDefault();
+    },
+
+    render:function() {
+        return ( 
+            React.createElement("div", {className: "app"}, 
+                React.createElement(Header, {isShowingMenu: this.state.isShowingMenu, onToggleMenu: this.onToggleMenu}), 
+                React.createElement(Nav, {isShowingMenu: this.state.isShowingMenu, onLink: this.onCloseMenu}), 
+                React.createElement(RouteHandler, {onClick: this.onCloseMenu})
+            )
+        );
+    }
+});
+
+},{"./Header.jsx":"/Users/ben/projects/wsk/web-starter-kit/app/scripts/components/Header.jsx","./Main.jsx":"/Users/ben/projects/wsk/web-starter-kit/app/scripts/components/Main.jsx","./Nav.jsx":"/Users/ben/projects/wsk/web-starter-kit/app/scripts/components/Nav.jsx","react-router":"react-router","react/addons":"react/addons"}],"/Users/ben/projects/wsk/web-starter-kit/app/scripts/components/Main.jsx":[function(require,module,exports){
 var React = require('react/addons');
 var Router = require('react-router');
 var $__0=    Router,Link=$__0.Link,RouteHandler=$__0.RouteHandler;
@@ -230,7 +338,7 @@ var ActionTypes = require('../Constants').ActionTypes;
 var ArticleStore = (function(){for(var EventEmitter____Key in EventEmitter){if(EventEmitter.hasOwnProperty(EventEmitter____Key)){____Class0[EventEmitter____Key]=EventEmitter[EventEmitter____Key];}}var ____SuperProtoOfEventEmitter=EventEmitter===null?null:EventEmitter.prototype;____Class0.prototype=Object.create(____SuperProtoOfEventEmitter);____Class0.prototype.constructor=____Class0;____Class0.__superConstructor__=EventEmitter;
 
     function ____Class0() {
-        this.articles = [];
+        this.articles = require('./articles.json');
         var that = this;
         Dispatcher.register(function(action)  {
             that.handleAction(action);
@@ -269,4 +377,27 @@ return ____Class0;})();
 
 module.exports = new ArticleStore();
 
-},{"../Constants":"/Users/ben/projects/wsk/web-starter-kit/app/scripts/Constants.js","../Dispatcher":"/Users/ben/projects/wsk/web-starter-kit/app/scripts/Dispatcher.js","events":"events"}]},{},["./app/scripts/index.jsx"]);
+},{"../Constants":"/Users/ben/projects/wsk/web-starter-kit/app/scripts/Constants.js","../Dispatcher":"/Users/ben/projects/wsk/web-starter-kit/app/scripts/Dispatcher.js","./articles.json":"/Users/ben/projects/wsk/web-starter-kit/app/scripts/stores/articles.json","events":"events"}],"/Users/ben/projects/wsk/web-starter-kit/app/scripts/stores/articles.json":[function(require,module,exports){
+module.exports=module.exports=module.exports= [
+     {
+        "id": "All-about-Browserify",
+        "title": "All about Browserify",
+        "body": "I think Browserify is a great tooling.",
+        "comments": [{
+            "id": "I-agree-that-it",
+            "body": "I agree that it is a great tooling to help with all things dependency."
+        }]
+    },
+    {
+        "id": "All-about-Reactify",
+        "title": "All about Reactify",
+        "body": "I think Reactify is a great tooling.",
+        "comments": [
+            {
+                "id": "I-agree-that-it",
+                "body": "I agree that it is a great tooling to help with all things dependency."
+            }
+        ]
+    }
+]
+},{}]},{},["./app/scripts/index.jsx"]);
